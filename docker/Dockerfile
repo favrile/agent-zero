@@ -1,11 +1,17 @@
-# Use the latest slim version of Debian
-FROM --platform=$TARGETPLATFORM debian:bookworm-slim
+# Specify the base image with CUDA support
+FROM --platform=$TARGETPLATFORM nvidia/cuda:11.0.3-base-ubuntu20.04
+# FROM --platform=$TARGETPLATFORM debian:bookworm-slim
 
 # Set ARG for platform-specific commands
 ARG TARGETPLATFORM
 
-# Update and install necessary packages
+# Set environment variables
+ENV TZ=America/Chicago
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update and install necessary packages, including tzdata
 RUN apt-get update && apt-get install -y \
+    tzdata \
     python3 \
     python3-pip \
     python3-venv \
@@ -14,6 +20,10 @@ RUN apt-get update && apt-get install -y \
     openssh-server \
     sudo \
     && rm -rf /var/lib/apt/lists/*
+
+# Set up timezone
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+    && dpkg-reconfigure -f noninteractive tzdata
 
 # Set up SSH
 RUN mkdir /var/run/sshd && \
@@ -39,5 +49,3 @@ EXPOSE 22
 
 # Init .bashrc
 CMD ["/usr/local/bin/initialize.sh"]
-
-
